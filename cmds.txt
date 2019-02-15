@@ -1,2 +1,10 @@
 env\Scripts\activate
 
+python manage.py runserver
+
+python manage.py shell
+  https://tutorial.djangogirls.org/en/django_orm/
+
+
+auth:
+  https://docs.djangoproject.com/en/2.1/topics/auth/default/
