@@ -1,0 +1,232 @@
+<html>
+<head>
+
+<script>
+function start() 
+{
+    
+    update_user_data()
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function request(method, url, postdata, ondata) {
+    var req = new XMLHttpRequest()
+    req.addEventListener("load", function(evt) {
+        // console.log("TEXT=" + this.responseText)
+        if (this.status == 200) {
+            var d = JSON.parse(this.responseText);
+            ondata(d)
+        }
+        else {
+            django_error.contentWindow.document.write(this.responseText)
+            django_error.style.display = "initial"
+        }
+    })
+    req.addEventListener("error", function(evt) {
+        console.log("failed request " + url)
+    })
+    req.open(method, url)
+    var p = undefined
+    if (postdata) {
+        req.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); // https://docs.djangoproject.com/en/2.0/ref/csrf/
+        //str.push('csrfmiddlewaretoken=' + getCookie('csrftoken'));
+        var str = [];
+        for(var p in postdata)
+            str.push(encodeURIComponent(p) + "=" + encodeURIComponent(postdata[p]));
+        p = str.join("&");        
+    }
+    req.send(p)
+}
+
+
+
+function update_user_data() 
+{
+    request("GET", "/get_user_data/", null, function(d) {
+        console.log("status=" + d.status)
+        if (d.status == "err-no-user") {
+            user_input.style.display = "initial"
+            user_data.style.display = "none"
+        }
+        else {
+            user_input.style.display = "none"
+            user_data.style.display = "initial"
+            show_user_name.innerHTML = d.name
+            
+            var str = []
+            for(var i in d.warriors) {
+                var w = d.warriors[i]
+                var text = '<div>Title: TITLE<br>code1: CODE1<br>code2: CODE2<br>-----------------<br></div>'
+                text = text.replace('TITLE', w.title).replace('CODE1', w.code1).replace('CODE2', w.code2)
+                str.push(text)
+            }
+            warrior_defs.innerHTML = str.join('\n')
+            
+            str = []
+            for(var i in d.teams) {
+                var t = d.teams[i]
+                var text = '<div>Name: TEAM_NAME<br>&nbsp;&nbsp;Members: MEMBERS</div>'
+                text = text.replace('TEAM_NAME', t.name).replace('MEMBERS', t.members.join(','))
+                str.push(text)
+                for(var iw in t.warriors) {   
+                    var tw = t.warriors[iw]
+                    var text = '<div>&nbsp;&nbspTitle: TITLE<br>&nbsp;&nbspcode1: CODE1<br>&nbsp;&nbspcode2: CODE2<br>\
+                                &nbsp;&nbspupdater: UPDATER<br>&nbsp;&nbsp=========<br></div>'
+                    text = text.replace('TITLE', tw.title).replace('CODE1', tw.code1).replace('CODE2', tw.code2).replace('UPDATER', tw.updated_by_name)
+                    str.push(text)
+                }                
+            }
+            users_teams.innerHTML = str.join('\n')
+        }
+    })
+
+}
+
+
+function check_status(d, err_elem) {
+    console.log("status=" + d.status)
+    if (d.status.startsWith("ok-")) {
+        update_user_data()
+        err_elem.innerHTML = ""
+    }
+    else {
+        err_elem.innerHTML = "ERROR:" + d.text
+    }   
+}
+
+
+function new_user_submit() {
+    new_user_msg.innerHTML = ""
+    var p = { "name":in_user_name.value, "pass":in_user_pass.value }
+    request("POST", "/create_user/", p, function(d) {
+        check_status(d, new_user_msg)
+    })
+}
+
+function user_login() {
+    new_user_msg.innerHTML = ""
+    var p = { "name":in_user_name.value, "pass":in_user_pass.value }
+    request("POST", "/user_login/", p, function(d) {
+        check_status(d, new_user_msg)   
+    })
+}
+
+
+function user_logout() {
+    new_user_msg.innerHTML = ""
+    user_ops_msg.innerHTML = ""
+    request("GET", "/user_logout/", null, function(d) {
+        check_status(d, user_ops_msg)
+    });
+}
+
+function add_user_warrior() {
+    user_ops_msg.innerHTML = ""
+    var d = {"title":title_edit.value, "code1": code1_edit.value, "code2": code2_edit.value, "wtype":2}
+    request("POST", "/add_warrior_def/", d, function(d) {
+        check_status(d, user_ops_msg)
+    })
+}
+
+function add_team_warrior() {
+    user_ops_msg.innerHTML = ""
+    var d = {"to_team": team_name_edit.value, "title":title_edit.value, "code1": code1_edit.value, "code2": code2_edit.value, "wtype":2}
+    request("POST", "/add_warrior_def/", d, function(d) {
+        check_status(d, user_ops_msg)
+    })
+}
+
+function create_team() {
+    user_ops_msg.innerHTML = ""
+    var d = {"name":team_name_edit.value, "pass": team_pass_edit.value }
+    request("POST", "/create_team/", d, function(d) {
+        check_status(d, user_ops_msg)     
+    })
+}
+
+function join_team() {
+    user_ops_msg.innerHTML = ""
+    var d = {"name":team_name_edit.value, "pass": team_pass_edit.value }
+    request("POST", "/join_team/", d, function(d) {
+        check_status(d, user_ops_msg)     
+    })
+}
+
+
+</script>
+<style>
+body { 
+  font-family: Tahoma;
+}
+#code1_edit,#code2_edit {
+    width:200px;
+    height:100px;
+}
+
+#user_input {
+    display: none;
+}
+#user_data {
+    display: none;
+}
+
+#django_error {
+    width: 100%;
+    height: 500px;
+    display: none;
+}
+
+</style>
+</head>
+<body onload="start()">
+  <h1>Test page!</h1>
+  Warrior:<input id="title_edit" type="text"><br>
+  Code:<br>
+  <textarea id="code1_edit"></textarea><textarea id="code2_edit"></textarea><br>
+  Team-Name: <input id="team_name_edit" name="team-name" type="text"> 
+  Team-Password:  <input id="team_pass_edit" name="team-pass" type="password" autocomplete="new-password">
+  <hr>
+  <div id="user_input">
+      <form onsubmit="return false">
+      Username: <input id="in_user_name" type="text"><br>
+      Password:<input id="in_user_pass" type="password"><br>
+      <input type="submit" value="Register" onclick="new_user_submit()">
+      <input type="submit" value="Login" onclick="user_login()">
+      </form>
+      <div id="new_user_msg"></div>
+  </div>
+  <div id="user_data">
+      name:<span id="show_user_name"></span>
+      <input type="submit" value="Logout" onclick="user_logout()">
+      <input type="submit" value="Add Warrior" onclick="add_user_warrior()">
+      <input type="submit" value="Add Team Warrior" onclick="add_team_warrior()">
+      <input type="submit" value="Create Team" onclick="create_team()">
+      <input type="submit" value="Join Team" onclick="join_team()">
+      <div id="user_ops_msg"></div>
+      <br>------------ User's saved warriors:<br>
+      <div id="warrior_defs"></div>
+      <br><br>------------ User's Teams:<br>
+      <div id="users_teams"></div>
+      
+  </div>
+  {% csrf_token %}
+  <iframe src="javascript:void(0);" id="django_error"></iframe>
+
+</body>
+</html>

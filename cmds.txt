@@ -2,6 +2,14 @@ env\Scripts\activate
 
 python manage.py runserver
 
+change in DB:
+  python manage.py makemigrations blog_test
+  python manage.py migrate blog_test
+
+python manage.py flush   -- del database
+python manage.py migrate appname zero  -- initialize
+
+
 python manage.py shell
   https://tutorial.djangogirls.org/en/django_orm/
 
