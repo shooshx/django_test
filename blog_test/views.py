@@ -61,7 +61,7 @@ def create_user(request):
     if username.strip() == "":
         return JsonResponse({'status':'err-need-name', 'text':"User name can't be empty"})
     if User.objects.filter(username=username).exists():
-        return JsonResponse({'status':'name-exists'})
+        return JsonResponse({'status':'name-exists', 'text':"User of this name already exists"})
     password = request.POST['pass']
     if password == "":
         return JsonResponse({'status':'err-need-password', 'text':"Password can't be empty"})
@@ -70,7 +70,8 @@ def create_user(request):
         
     user = User.objects.create_user(username, '', password)
     user.save()
-    return JsonResponse({'status':'ok-created'})
+    return user_login(request)
+    #return JsonResponse({'status':'ok-created'})
     
     
 def user_login(request):

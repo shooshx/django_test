@@ -1,4 +1,10 @@
-env\Scripts\activate
+recreating the venv
+  delete the old one
+  pip install virtualenv
+  virtualenv venv
+  pip install -r requirements.txt
+
+venv\Scripts\activate
 
 python manage.py runserver
 
@@ -9,6 +15,11 @@ change in DB:
 python manage.py flush   -- del database
 python manage.py migrate appname zero  -- initialize
 
+python manage.py migrate blog_test
+  from django.contrib.auth.models import User
+  User.objects.all()
+
+pk = primary key
 
 python manage.py shell
   https://tutorial.djangogirls.org/en/django_orm/
@@ -16,3 +27,14 @@ python manage.py shell
 
 auth:
   https://docs.djangoproject.com/en/2.1/topics/auth/default/
+
+u1's zoobi
+
+
+---- How does it work? ----
+blog_test/static is a symlink to war folder:
+  cd C:\Projects\corewars8086_js\state_server\blog_test>
+  mklink /d static ..\..\corewars8086_js\war
+GWT devmode still works since in the war folder there's a symlink called static that points to the same folder
+
+
